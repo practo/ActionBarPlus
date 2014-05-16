@@ -61,41 +61,6 @@ import android.view.ViewGroup;
  */
 public class ActionBarToggle implements DrawerListener, PanelSlideListener {
 
-    /**
-     * Allows an implementing Activity to return an {@link ActionBarDrawerToggle.Delegate} to use
-     * with ActionBarDrawerToggle.
-     */
-    public interface DelegateProvider {
-
-        /**
-         * @return Delegate to use for ActionBarDrawableToggles, or null if the Activity
-         *         does not wish to override the default behavior.
-         */
-        Delegate getDrawerToggleDelegate();
-    }
-
-    public interface Delegate {
-        /**
-         * @return Up indicator drawable as defined in the Activity's theme, or null if one is not
-         *         defined.
-         */
-        Drawable getThemeUpIndicator();
-
-        /**
-         * Set the Action Bar's up indicator drawable and content description.
-         *
-         * @param upDrawable     - Drawable to set as up indicator
-         * @param contentDescRes - Content description to set
-         */
-        void setActionBarUpIndicator(Drawable upDrawable, int contentDescRes);
-
-        /**
-         * Set the Action Bar's up indicator content description.
-         *
-         * @param contentDescRes - Content description to set
-         */
-        void setActionBarDescription(int contentDescRes);
-    }
 
     private interface ActionBarDrawerToggleImpl {
         Drawable getThemeUpIndicator(Activity activity);
@@ -185,7 +150,7 @@ public class ActionBarToggle implements DrawerListener, PanelSlideListener {
     private static final int ID_HOME = 0x0102002c;
 
     private final Activity mActivity;
-    private final Delegate mActivityImpl;
+    private final ActionBarDrawerToggle.Delegate mActivityImpl;
     private final SlidingPaneLayout mSlidingPaneLayout;
     private final DrawerLayout mDrawerLayout;
     private boolean mDrawerIndicatorEnabled = true;
@@ -229,8 +194,8 @@ public class ActionBarToggle implements DrawerListener, PanelSlideListener {
         mActivity = activity;
         
         // Allow the Activity to provide an impl
-        if (activity instanceof DelegateProvider) {
-            mActivityImpl = ((DelegateProvider) activity).getDrawerToggleDelegate();
+        if (activity instanceof ActionBarDrawerToggle.DelegateProvider) {
+            mActivityImpl = ((ActionBarDrawerToggle.DelegateProvider) activity).getDrawerToggleDelegate();
         } else {
             mActivityImpl = null;
         }
@@ -256,7 +221,7 @@ public class ActionBarToggle implements DrawerListener, PanelSlideListener {
         mOpenDrawerContentDescRes = openDrawerContentDescRes;
         mCloseDrawerContentDescRes = closeDrawerContentDescRes;
 
-        mThemeImage = IMPL.getThemeUpIndicator(activity);
+        mThemeImage = getThemeUpIndicator();
         mDrawerImage = activity.getResources().getDrawable(drawerImageRes);
         mSlider = new SlideDrawable(mDrawerImage);
         mSlider.setOffsetBy(TOGGLE_DRAWABLE_OFFSET);
@@ -279,13 +244,11 @@ public class ActionBarToggle implements DrawerListener, PanelSlideListener {
         }
 
         if (mDrawerIndicatorEnabled) {
-            mSetIndicatorInfo = IMPL.setActionBarUpIndicator(mSetIndicatorInfo, mActivity,
-                    mSlider, isViewOpen() ?
+             setActionBarUpIndicator(mSlider, isViewOpen() ?
                     mOpenDrawerContentDescRes : mCloseDrawerContentDescRes);
         }
         else {
-            mSetIndicatorInfo = IMPL.setActionBarUpIndicator(mSetIndicatorInfo,
-                    mActivity, mThemeImage, 0);
+            setActionBarUpIndicator(mThemeImage, 0);
         }
     }
 
@@ -302,12 +265,10 @@ public class ActionBarToggle implements DrawerListener, PanelSlideListener {
     public void setDrawerIndicatorEnabled(boolean enable) {
         if (enable != mDrawerIndicatorEnabled) {
             if (enable) {
-                mSetIndicatorInfo = IMPL.setActionBarUpIndicator(mSetIndicatorInfo,
-                        mActivity, mSlider, isViewOpen() ?
+                setActionBarUpIndicator(mSlider, isViewOpen() ?
                         mOpenDrawerContentDescRes : mCloseDrawerContentDescRes);
             } else {
-                mSetIndicatorInfo = IMPL.setActionBarUpIndicator(mSetIndicatorInfo,
-                        mActivity, mThemeImage, 0);
+               setActionBarUpIndicator(mThemeImage, 0);
             }
             mDrawerIndicatorEnabled = enable;
         }
@@ -330,7 +291,7 @@ public class ActionBarToggle implements DrawerListener, PanelSlideListener {
      */
     public void onConfigurationChanged(Configuration newConfig) {
         // Reload drawables that can change with configuration
-        mThemeImage = IMPL.getThemeUpIndicator(mActivity);
+        mThemeImage = getThemeUpIndicator();
         mDrawerImage = mActivity.getResources().getDrawable(mDrawerImageResource);
         if(view_type == TYPE.Slider){
         	mDrawerIndicatorEnabled = !mSlidingPaneLayout.isSlideable();
